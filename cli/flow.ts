@@ -4,7 +4,7 @@
 
 import prompts from "prompts";
 import { runAgent, applyPatches, runCommand } from "../agent/runner.js";
-import type { AzureConfig, GroqConfig, GeminiConfig, ProviderConfig } from "../llm/provider.js";
+import type { ProviderConfig } from "../llm/provider.js";
 import type { SummaryOptions } from "./ui.js";
 import { readConfig } from "../config/config.js";
 import { saveSessionAfterRun } from "../memory/memoryManager.js";
@@ -23,33 +23,9 @@ import {
   sectionFailed,
 } from "./ui.js";
 
-export function getAzureConfig(env: Record<string, string>): AzureConfig | null {
-  const endpoint = process.env.AZURE_OPENAI_ENDPOINT ?? env.AZURE_OPENAI_ENDPOINT;
-  const apiKey = process.env.AZURE_OPENAI_API_KEY ?? env.AZURE_OPENAI_API_KEY;
-  const deployment =
-    process.env.AZURE_OPENAI_DEPLOYMENT ?? env.AZURE_OPENAI_DEPLOYMENT ?? "gpt-4o";
-  if (!endpoint || !apiKey) return null;
-  return { endpoint, apiKey, deployment };
-}
-
-export function getGroqConfig(env: Record<string, string>): GroqConfig | null {
-  const apiKey = process.env.GROQ_API_KEY ?? env.GROQ_API_KEY;
-  if (!apiKey) return null;
-  const model = process.env.GROQ_MODEL ?? env.GROQ_MODEL ?? "openai/gpt-oss-120b";
-  return { apiKey, model };
-}
-
-export function getGeminiConfig(env: Record<string, string>): GeminiConfig | null {
-  const apiKey = process.env.GEMINI_API_KEY ?? env.GEMINI_API_KEY;
-  if (!apiKey) return null;
-  const model = process.env.GEMINI_MODEL ?? env.GEMINI_MODEL ?? "gemini-2.0-flash";
-  return { apiKey, model };
-}
-
 export interface ExecuteTaskOptions {
   rootDir: string;
   task: string;
-  env: Record<string, string>;
   dryRun?: boolean;
   yes?: boolean;
   providerFlag?: ProviderKind | null;
@@ -65,7 +41,6 @@ export async function executeTask(options: ExecuteTaskOptions): Promise<SummaryO
   const {
     rootDir,
     task,
-    env,
     dryRun = false,
     yes = false,
     providerFlag = null,
@@ -77,12 +52,9 @@ export async function executeTask(options: ExecuteTaskOptions): Promise<SummaryO
   if (fileConfig?.defaultProvider) {
     setCachedProvider(fileConfig.defaultProvider);
   }
-  const azure =
-    fileConfig?.providers?.azure ?? getAzureConfig(env);
-  const groq =
-    fileConfig?.providers?.groq ?? getGroqConfig(env);
-  const gemini =
-    fileConfig?.providers?.gemini ?? getGeminiConfig(env);
+  const azure = fileConfig?.providers?.azure ?? null;
+  const groq = fileConfig?.providers?.groq ?? null;
+  const gemini = fileConfig?.providers?.gemini ?? null;
   let llm: ProviderConfig;
   try {
     llm = await selectProviderUI(azure, groq, gemini, providerFlag);

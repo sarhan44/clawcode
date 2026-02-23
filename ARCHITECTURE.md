@@ -28,12 +28,11 @@ This document describes the **coding-agent** codebase: structure, entry flow, ke
 1. **Parse args** via `parseArgs(argv)` → `ParsedArgs`: `task`, `rootDir`, `dryRun`, `yes`, `provider`, `explicitDir`, `debug`, `version`, `shell`, `ui`, `help`.
 2. **Branch order:**
    - **`--help` / `-h`** → `showHelp()`, exit 0.
-   - **`config`** (argv[0]) → `loadEnv()`, `runProviderConfig()`, exit 0.
-   - **`loadEnv()`** from package root and cwd `.env`.
+   - **`config`** (argv[0]) → `runProviderConfig()`, exit 0.
    - **`--version` / `-v`** → print version from `package.json`, exit 0.
    - **Onboarding** → `runOnboardingIfNeeded()` (ensure at least one provider in `~/.clawcode/config.json`).
-   - **REPL** → if `shell && !ui`: `runRepl({ env, debug })`, return.
-   - **UI (default when no task or `--ui`)** → `showHeader()`, project selection, add recent, read config, select provider (UI or cached), model name, git branch, `createAgentEmitter()`, define `runTask` calling `executeTask(..., emitter, yes: true)`, then `runInkUI({ rootDir, env, provider, model, branch, emitter, runTask })`, return.
+   - **REPL** → if `shell && !ui`: `runRepl({ debug })`, return.
+   - **UI (default when no task or `--ui`)** → `showHeader()`, project selection, add recent, read config, select provider (UI or cached), model name, git branch, `createAgentEmitter()`, define `runTask` calling `executeTask(..., emitter, yes: true)`, then `runInkUI({ rootDir, provider, model, branch, emitter, runTask })`, return.
    - **Single/multi task (non-UI)** → `showHeader()`, optionally project selection and inquirer for task; then **do-while** loop: `executeTaskWithSummary(...)` then “What next?” until empty; on error show box and exit if not interactive.
 
 So: **config** and **version** exit early; **onboarding** runs once when no providers; then either **REPL**, **Ink UI**, or **console task loop**.

@@ -11,41 +11,27 @@ CLI coding agent (**ClawCode**) that uses **Azure OpenAI**, **Groq**, or **Googl
 
 ## Installation
 
-### From source (recommended)
+### Install (GitHub)
+
+Mac / Linux:
 
 ```bash
-cd coding-agent
-npm install
-npm run build
+curl -fsSL https://raw.githubusercontent.com/sarhan44/clawcode/main/install.sh | bash
 ```
 
-**Use locally** (run from project directory):
+Windows (PowerShell):
 
-```bash
-node dist/cli.js
-# or with a task:
-node dist/cli.js "Add unit tests for auth"
+```powershell
+iwr https://raw.githubusercontent.com/sarhan44/clawcode/main/install.ps1 -useb | iex
 ```
 
-**Install globally** (use `clawcode` from anywhere):
-
-```bash
-npm link
-# or: npm install -g .
-```
-
-Then run from any directory:
+After install:
 
 ```bash
 clawcode
-clawcode "Your task here"
 ```
 
-### Quick start after install
-
-1. Run `clawcode` (or `node dist/cli.js` if not linked).
-2. On first run, complete onboarding: choose a project directory, then configure at least one AI provider (or skip and run `clawcode config` later).
-3. The interactive TUI opens—enter a task and press Enter.
+On first run, ClawCode will guide you through configuring an AI provider. You can also run `clawcode config` any time to add/update providers.
 
 ![ClawCode TUI](docs/tui-screenshot.png)
 
@@ -101,37 +87,15 @@ clawcode --dry-run "Add unit tests"
 
 ## Configuration
 
-Config is stored in **`~/.clawcode/config.json`**. On first run, ClawCode runs onboarding and saves your provider settings. You can also use environment variables or a `.env` file in the project or package root.
+Provider credentials are stored in **`~/.clawcode/config.json`**.
 
-**Azure OpenAI**
+To configure or update providers, run:
 
-- `AZURE_OPENAI_ENDPOINT` – e.g. `https://<resource>.openai.azure.com`
-- `AZURE_OPENAI_API_KEY` – your API key
-- `AZURE_OPENAI_DEPLOYMENT` – deployment name (default: `gpt-4o`)
-
-**Groq**
-
-- `GROQ_API_KEY` – your Groq API key
-- `GROQ_MODEL` – optional (default: `openai/gpt-oss-120b`)
-
-**Google Gemini**
-
-- `GEMINI_API_KEY` – your Gemini API key
-- `GEMINI_MODEL` – optional (default: `gemini-2.0-flash`)
-
-Example `.env`:
-
-```env
-AZURE_OPENAI_ENDPOINT=https://myresource.openai.azure.com
-AZURE_OPENAI_API_KEY=your-azure-key
-AZURE_OPENAI_DEPLOYMENT=gpt-4o
-
-GROQ_API_KEY=your-groq-key
-GROQ_MODEL=openai/gpt-oss-120b
-
-GEMINI_API_KEY=your-gemini-key
-GEMINI_MODEL=gemini-2.0-flash
+```bash
+clawcode config
 ```
+
+ClawCode currently **does not load provider credentials from `.env` files or environment variables**. Use onboarding or `clawcode config` to manage providers.
 
 ---
 

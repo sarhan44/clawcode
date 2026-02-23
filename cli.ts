@@ -15,13 +15,7 @@ import { fileURLToPath } from "node:url";
 import { input as inquirerInput } from "@inquirer/prompts";
 import { createAgentEmitter } from "./agent/events.js";
 import { addRecentProject } from "./cli/cache.js";
-import {
-  executeTask,
-  executeTaskWithSummary,
-  getAzureConfig,
-  getGroqConfig,
-  getGeminiConfig,
-} from "./cli/flow.js";
+import { executeTask, executeTaskWithSummary } from "./cli/flow.js";
 import { readConfig } from "./config/config.js";
 import { runOnboardingIfNeeded, runProviderConfig } from "./cli/onboarding.js";
 import { getCachedProvider, selectProviderUI, type ProviderKind } from "./cli/provider.js";
@@ -49,26 +43,6 @@ function getGitBranch(projectRoot: string): string | undefined {
   } catch {
     return undefined;
   }
-}
-
-function parseEnvFile(filePath: string): Record<string, string> {
-  const out: Record<string, string> = {};
-  try {
-    const raw = readFileSync(filePath, "utf-8");
-    for (const line of raw.split("\n")) {
-      const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
-      if (m) out[m[1].trim()] = m[2].trim().replace(/^["']|["']$/g, "");
-    }
-  } catch {
-    // file missing or unreadable
-  }
-  return out;
-}
-
-function loadEnv(): Record<string, string> {
-  const fromPackage = parseEnvFile(resolve(PACKAGE_ROOT, ".env"));
-  const fromCwd = parseEnvFile(resolve(process.cwd(), ".env"));
-  return { ...fromPackage, ...fromCwd };
 }
 
 export interface ParsedArgs {
@@ -178,12 +152,9 @@ async function main(): Promise<void> {
   }
 
   if (argv[0] === "config") {
-    const env = loadEnv();
     await runProviderConfig();
     process.exit(0);
   }
-
-  const env = loadEnv();
 
   if (version) {
     try {
@@ -198,7 +169,7 @@ async function main(): Promise<void> {
   await runOnboardingIfNeeded();
 
   if (shell && !ui) {
-    await runRepl({ env, debug });
+    await runRepl({ debug });
     return;
   }
 
@@ -213,9 +184,9 @@ async function main(): Promise<void> {
     uiRootDir = resolve(uiRootDir);
     addRecentProject(uiRootDir);
     const fileConfig = readConfig();
-    const azure = fileConfig?.providers?.azure ?? getAzureConfig(env);
-    const groq = fileConfig?.providers?.groq ?? getGroqConfig(env);
-    const gemini = fileConfig?.providers?.gemini ?? getGeminiConfig(env);
+    const azure = fileConfig?.providers?.azure ?? null;
+    const groq = fileConfig?.providers?.groq ?? null;
+    const gemini = fileConfig?.providers?.gemini ?? null;
     await selectProviderUI(azure, groq, gemini, providerFlag);
     const providerName = getCachedProvider() ?? "groq";
     const modelName =
@@ -231,13 +202,11 @@ async function main(): Promise<void> {
     const runTask = async (params: {
       rootDir: string;
       task: string;
-      env: Record<string, string>;
       emitter: import("./agent/events.js").AgentEmitter;
     }) => {
       await executeTask({
         rootDir: params.rootDir,
         task: params.task,
-        env: params.env,
         emitter: params.emitter,
         yes: true,
         providerFlag: getCachedProvider(),
@@ -245,7 +214,6 @@ async function main(): Promise<void> {
     };
     await runInkUI({
       rootDir: uiRootDir,
-      env,
       provider: providerName,
       model: modelName,
       branch,
@@ -292,7 +260,6 @@ async function main(): Promise<void> {
       const summary = await executeTaskWithSummary({
         rootDir: currentRootDir,
         task: currentTask,
-        env,
         dryRun,
         yes,
         providerFlag: (providerFlag ?? getCachedProvider()) as ProviderKind | null,

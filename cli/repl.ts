@@ -5,7 +5,7 @@
 import { createInterface } from "node:readline";
 import chalk from "chalk";
 import { addRecentProject } from "./cache.js";
-import { executeTaskWithSummary, getAzureConfig, getGroqConfig, getGeminiConfig } from "./flow.js";
+import { executeTaskWithSummary } from "./flow.js";
 import { selectProviderUI, getCachedProvider } from "./provider.js";
 import { runProjectSelection } from "./projects.js";
 import { showErrorBox, showHeader } from "./ui.js";
@@ -21,22 +21,12 @@ const COMMANDS = [
   ":help     - Show this help",
 ];
 
-function getProviderConfigs(env: Record<string, string>) {
-  const fileConfig = readConfig();
-  return {
-    azure: fileConfig?.providers?.azure ?? getAzureConfig(env),
-    groq: fileConfig?.providers?.groq ?? getGroqConfig(env),
-    gemini: fileConfig?.providers?.gemini ?? getGeminiConfig(env),
-  };
-}
-
 export interface RunReplOptions {
-  env: Record<string, string>;
   debug?: boolean;
 }
 
 export async function runRepl(options: RunReplOptions): Promise<void> {
-  const { env, debug = false } = options;
+  const { debug = false } = options;
   const cwd = process.cwd();
 
   showHeader();
@@ -67,7 +57,10 @@ export async function runRepl(options: RunReplOptions): Promise<void> {
         process.exit(0);
       }
       if (cmd === ":provider") {
-        const { azure, groq, gemini } = getProviderConfigs(env);
+        const fileConfig = readConfig();
+        const azure = fileConfig?.providers?.azure ?? null;
+        const groq = fileConfig?.providers?.groq ?? null;
+        const gemini = fileConfig?.providers?.gemini ?? null;
         if (!azure && !groq && !gemini) {
           showErrorBox("No LLM config found. Run clawcode to configure a provider.", debug);
         } else {
@@ -117,7 +110,6 @@ export async function runRepl(options: RunReplOptions): Promise<void> {
       await executeTaskWithSummary({
         rootDir: rootDir,
         task: trimmed,
-        env,
         yes: false,
         dryRun: false,
         providerFlag: getCachedProvider(),

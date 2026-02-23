@@ -5,14 +5,14 @@
   "type": "module",
   "main": "dist/cli.js",
   "bin": {
-    "clawcode": "./dist/cli.js"
+    "clawcode": "dist/cli.js"
   },
   "author": "Sarhan Khan",
   "scripts": {
-    "build": "tsc && node scripts/postbuild.cjs",
+    "build": "tsc",
     "start": "node dist/cli.js",
     "dev": "tsx cli.ts",
-    "prepublishOnly": "npm run build"
+    "postbuild": "node scripts/postbuild.cjs"
   },
   "engines": {
     "node": ">=18.0.0"

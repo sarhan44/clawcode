@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
- * Prepends shebang to dist/cli.js so the binary runs with node when invoked as `clawcode`.
- * tsc does not preserve shebang from source.
+ * Post-build hardening for CLI packaging:
+ * - Ensure dist/cli.js has a shebang (some toolchains drop it).
+ * - Ensure dist/cli.js is executable on POSIX (Windows uses npm shims).
  */
 
 const fs = require("fs");
@@ -15,9 +16,15 @@ if (!fs.existsSync(cliPath)) {
   process.exit(0);
 }
 
-const content = fs.readFileSync(cliPath, "utf8");
-if (content.startsWith("#!")) {
-  process.exit(0);
+let content = fs.readFileSync(cliPath, "utf8");
+if (!content.startsWith("#!")) {
+  content = shebang + content;
+  fs.writeFileSync(cliPath, content, "utf8");
 }
 
-fs.writeFileSync(cliPath, shebang + content, "utf8");
+// Best-effort chmod on POSIX. On Windows this is a no-op for execution (npm generates shims).
+try {
+  if (process.platform !== "win32") fs.chmodSync(cliPath, 0o755);
+} catch {
+  // ignore chmod failures; npm may still provide runnable shims
+}

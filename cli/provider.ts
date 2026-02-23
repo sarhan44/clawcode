@@ -36,7 +36,7 @@ export async function selectProviderUI(
   if (providerFlag === "azure") {
     if (!azure) {
       console.error(
-        chalk.red("Azure selected but config missing. Set AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_API_KEY.")
+        chalk.red("Azure selected but config missing. Run: clawcode config")
       );
       process.exit(1);
     }
@@ -45,7 +45,7 @@ export async function selectProviderUI(
   }
   if (providerFlag === "groq") {
     if (!groq) {
-      console.error(chalk.red("Groq selected but config missing. Set GROQ_API_KEY."));
+      console.error(chalk.red("Groq selected but config missing. Run: clawcode config"));
       process.exit(1);
     }
     setCachedProvider("groq");
@@ -53,7 +53,7 @@ export async function selectProviderUI(
   }
   if (providerFlag === "gemini") {
     if (!gemini) {
-      console.error(chalk.red("Gemini selected but config missing. Set GEMINI_API_KEY."));
+      console.error(chalk.red("Gemini selected but config missing. Run: clawcode config"));
       process.exit(1);
     }
     setCachedProvider("gemini");
@@ -93,7 +93,7 @@ export async function selectProviderUI(
   }
   console.error(
     chalk.red(
-      "No LLM config found. Run clawcode to configure a provider, or set env vars (see .env.example)."
+      "No AI provider configured. Run: clawcode config"
     )
   );
   process.exit(1);

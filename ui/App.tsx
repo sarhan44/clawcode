@@ -11,7 +11,6 @@ import { InputPrompt } from "./InputPrompt.js";
 
 export interface AppProps {
   rootDir: string;
-  env: Record<string, string>;
   provider: string;
   model?: string;
   branch?: string;
@@ -19,7 +18,6 @@ export interface AppProps {
   runTask: (params: {
     rootDir: string;
     task: string;
-    env: Record<string, string>;
     emitter: AgentEmitter;
   }) => Promise<void>;
 }
@@ -38,7 +36,7 @@ function eventToFeedItem(event: string, payload: unknown): Omit<FeedItem, "id" |
   return null;
 }
 
-export function App({ rootDir, env, provider, model, branch, emitter, runTask }: AppProps) {
+export function App({ rootDir, provider, model, branch, emitter, runTask }: AppProps) {
   const [items, setItems] = useState<FeedItem[]>([]);
   const [diffs, setDiffs] = useState<string[]>([]);
   const [isRunning, setIsRunning] = useState(false);
@@ -118,7 +116,7 @@ export function App({ rootDir, env, provider, model, branch, emitter, runTask }:
   const handleSubmit = async (task: string) => {
     setIsRunning(true);
     try {
-      await runTask({ rootDir, task, env, emitter });
+      await runTask({ rootDir, task, emitter });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       emitter.emit("error", { message: msg });
