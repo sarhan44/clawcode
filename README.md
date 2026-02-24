@@ -2,6 +2,9 @@
 
 CLI coding agent (**ClawCode**) that uses **Azure OpenAI**, **Groq**, or **Google Gemini** to plan and apply code changes. It scans your project (respecting `.gitignore`), sends minimal context to the LLM, and applies structured patches with backups and confirmation. Persistent memory (global + per-project session) survives restarts and model switches.
 
+- **Website:** [https://clawcode.vercel.app/](https://clawcode.vercel.app/)
+- **Documentation:** [https://clawcode.vercel.app/docs](https://clawcode.vercel.app/docs)
+
 ## Requirements
 
 - **Node.js** >= 18
