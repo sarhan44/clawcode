@@ -4,6 +4,9 @@ set -euo pipefail
 REPO_OWNER="sarhan44"
 REPO_NAME="clawcode"
 REF="main"
+INSTALL_DIR="${HOME:?}/.clawcode"
+BIN_DIR="$INSTALL_DIR/bin"
+TARBALL_URL="https://github.com/${REPO_OWNER}/${REPO_NAME}/archive/refs/heads/${REF}.tar.gz"
 
 die() {
   echo "ERROR: $*" >&2
@@ -14,10 +17,6 @@ need_cmd() {
   command -v "$1" >/dev/null 2>&1 || die "Missing required command: $1"
 }
 
-have_cmd() {
-  command -v "$1" >/dev/null 2>&1
-}
-
 node_major_version() {
   node -p "Number((process.versions && process.versions.node || '0').split('.')[0])" 2>/dev/null || echo "0"
 }
@@ -25,11 +24,11 @@ node_major_version() {
 download() {
   local url="$1"
   local out="$2"
-  if have_cmd curl; then
+  if command -v curl >/dev/null 2>&1; then
     curl -fsSL "$url" -o "$out"
     return 0
   fi
-  if have_cmd wget; then
+  if command -v wget >/dev/null 2>&1; then
     wget -qO "$out" "$url"
     return 0
   fi
@@ -37,6 +36,9 @@ download() {
 }
 
 main() {
+  TMPDIR=$(mktemp -d 2>/dev/null || mktemp -d -t clawcode-install)
+  trap 'rm -rf "${TMPDIR:-}"' EXIT
+
   need_cmd node
   need_cmd npm
   need_cmd tar
@@ -44,32 +46,21 @@ main() {
   local major
   major="$(node_major_version)"
   if [[ "$major" -lt 18 ]]; then
-    die "Node.js >= 18 is required (found: $(node -v)). Install Node.js 18+ and re-run."
+    die "Node.js >= 18 is required (found: $(node -v 2>/dev/null || echo 'unknown')). Install Node.js 18+ and re-run."
   fi
 
-  local tmpdir
-  tmpdir="$(mktemp -d 2>/dev/null || mktemp -d -t clawcode-install)"
-  cleanup() { rm -rf "$tmpdir"; }
-  trap cleanup EXIT
-
-  local url archive srcdir
-  url="https://codeload.github.com/${REPO_OWNER}/${REPO_NAME}/tar.gz/refs/heads/${REF}"
-  archive="${tmpdir}/${REPO_NAME}.tar.gz"
-  srcdir="${tmpdir}/src"
-
-  mkdir -p "$srcdir"
+  mkdir -p "$BIN_DIR"
+  local archive="$TMPDIR/${REPO_NAME}.tar.gz"
   echo "Downloading ${REPO_OWNER}/${REPO_NAME}@${REF}..."
-  download "$url" "$archive"
+  download "$TARBALL_URL" "$archive"
 
   echo "Extracting..."
-  tar -xzf "$archive" -C "$srcdir"
+  tar -xzf "$archive" -C "$TMPDIR"
 
   local extracted
-  extracted="$(cd "$srcdir" && ls -d */ 2>/dev/null | head -n 1 || true)"
+  extracted="$(cd "$TMPDIR" && ls -d "${REPO_NAME}"-*/ 2>/dev/null | head -n 1)"
   [[ -n "$extracted" ]] || die "Failed to locate extracted directory."
-
-  local repo_dir
-  repo_dir="${srcdir}/${extracted%/}"
+  local repo_dir="$TMPDIR/${extracted%/}"
 
   [[ -f "${repo_dir}/package.json" ]] || die "package.json not found in extracted repo."
 
@@ -79,30 +70,30 @@ main() {
   echo "Building..."
   (cd "$repo_dir" && npm run build)
 
-  echo "Installing globally..."
-  if (cd "$repo_dir" && npm install -g . --no-audit --no-fund); then
-    :
-  else
-    cat >&2 <<'EOF'
+  local cli_src="${repo_dir}/dist/cli.js"
+  [[ -f "$cli_src" ]] || die "dist/cli.js not found after build."
 
-Global install failed (likely due to permissions).
+  local cli_dest="$BIN_DIR/clawcode"
+  cp "$cli_src" "$cli_dest"
 
-Try one of the following:
-  - Re-run with sudo:
-      curl -fsSL https://raw.githubusercontent.com/sarhan44/clawcode/main/install.sh | sudo bash
-  - Or configure npm to use a user-writable global prefix:
-      npm config set prefix "$HOME/.npm-global"
-      export PATH="$HOME/.npm-global/bin:$PATH"
-      # then re-run the installer
-
-EOF
-    exit 1
+  if ! head -n 1 "$cli_dest" | grep -q '^#!'; then
+    echo '#!/usr/bin/env node' | cat - "$cli_dest" > "${cli_dest}.tmp" && mv "${cli_dest}.tmp" "$cli_dest"
   fi
+  chmod +x "$cli_dest"
+
+  local path_line="export PATH=\"\$HOME/.clawcode/bin:\$PATH\""
+  for rc in "$HOME/.zshrc" "$HOME/.bashrc"; do
+    if [[ -f "$rc" ]]; then
+      grep -qF '.clawcode/bin' "$rc" 2>/dev/null || echo "$path_line" >> "$rc"
+    else
+      echo "$path_line" >> "$rc"
+    fi
+  done
+
+  export PATH="$BIN_DIR:$PATH"
 
   echo ""
-  echo "ClawCode installed successfully."
-  echo "Run: clawcode"
+  echo "ClawCode installed successfully. Run: clawcode"
 }
 
 main "$@"
-
