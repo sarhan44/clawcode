@@ -1,4 +1,4 @@
-# ClawCode (pushpak-code-cli) – Architecture
+# ClawCode – Architecture
 
 This document describes the **coding-agent** codebase: structure, entry flow, key modules, **logic and algorithms**, and data structures.
 
