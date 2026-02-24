@@ -14,27 +14,28 @@ CLI coding agent (**ClawCode**) that uses **Azure OpenAI**, **Groq**, or **Googl
 
 ## Installation
 
-### Install (GitHub)
+Install into user space (no `sudo`, no global npm). Requires Node.js >= 18.
 
-Mac / Linux:
+**macOS / Linux:**
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/sarhan44/clawcode/main/install.sh | bash
 ```
 
-Windows (PowerShell):
+**Windows (PowerShell):**
 
 ```powershell
 iwr https://raw.githubusercontent.com/sarhan44/clawcode/main/install.ps1 -useb | iex
 ```
 
-After install:
+Then run:
 
 ```bash
 clawcode
 ```
 
 On first run, ClawCode will guide you through configuring an AI provider. You can also run `clawcode config` any time to add/update providers.
+
 
 <img width="1906" height="824" alt="image" src="https://github.com/user-attachments/assets/be90d8ea-5630-435d-ba77-778b41b3071d" />
 
@@ -169,6 +170,26 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed logic and algorithms.
 - Use `--dry-run` to see the plan and diff without applying anything.
 
 ---
+
+### Uninstall
+
+Removes the binary and config (including providers and recent projects). Optionally remove the PATH line from your shell config.
+
+**macOS / Linux:**
+
+```bash
+rm -rf ~/.clawcode
+```
+
+To stop your shell from looking for `clawcode`, edit `~/.zshrc` or `~/.bashrc` and remove the line that contains `.clawcode/bin`.
+
+**Windows (PowerShell):**
+
+```powershell
+Remove-Item -Recurse -Force $HOME\.clawcode
+```
+
+To remove from PATH: Settings → System → About → Advanced system settings → Environment Variables → User variables → Path → delete the `%USERPROFILE%\.clawcode\bin` entry.
 
 ## Contributing
 
