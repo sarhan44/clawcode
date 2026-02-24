@@ -36,7 +36,8 @@ clawcode
 
 On first run, ClawCode will guide you through configuring an AI provider. You can also run `clawcode config` any time to add/update providers.
 
-![ClawCode TUI](docs/tui-screenshot.png)
+<img width="1906" height="824" alt="image" src="https://github.com/user-attachments/assets/be90d8ea-5630-435d-ba77-778b41b3071d" />
+
 
 *ClawCode interactive UI: logo, project/provider info, activity feed, status bar, and task input.*
 
