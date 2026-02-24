@@ -70,16 +70,19 @@ main() {
   echo "Building..."
   (cd "$repo_dir" && npm run build)
 
-  local cli_src="${repo_dir}/dist/cli.js"
-  [[ -f "$cli_src" ]] || die "dist/cli.js not found after build."
+  echo "Installing globally into $INSTALL_DIR (no sudo)..."
+  mkdir -p "$BIN_DIR"
+  printf '%s\n' '{"name":"clawcode-install","private":true}' > "$INSTALL_DIR/package.json"
+  local packfile
+  packfile="$(cd "$repo_dir" && npm pack --silent)"
+  [[ -n "$packfile" ]] && [[ -f "$repo_dir/$packfile" ]] || die "npm pack failed."
+  (cd "$INSTALL_DIR" && npm install --no-audit --no-fund "$repo_dir/$packfile")
+  rm -f "$repo_dir/$packfile"
 
-  local cli_dest="$BIN_DIR/clawcode"
-  cp "$cli_src" "$cli_dest"
-
-  if ! head -n 1 "$cli_dest" | grep -q '^#!'; then
-    echo '#!/usr/bin/env node' | cat - "$cli_dest" > "${cli_dest}.tmp" && mv "${cli_dest}.tmp" "$cli_dest"
-  fi
-  chmod +x "$cli_dest"
+  local cli_script="$INSTALL_DIR/node_modules/clawcode/dist/cli.js"
+  [[ -f "$cli_script" ]] || die "Installed package missing dist/cli.js."
+  ln -sf "$cli_script" "$BIN_DIR/clawcode"
+  chmod +x "$BIN_DIR/clawcode"
 
   local path_line="export PATH=\"\$HOME/.clawcode/bin:\$PATH\""
   for rc in "$HOME/.zshrc" "$HOME/.bashrc"; do
@@ -93,7 +96,16 @@ main() {
   export PATH="$BIN_DIR:$PATH"
 
   echo ""
-  echo "ClawCode installed successfully. Run: clawcode"
+  echo "ClawCode installed successfully."
+  echo ""
+  echo "This terminal session does not have the new PATH yet (installer ran in a subshell)."
+  echo "Either:"
+  echo "  • Restart your terminal, then run: clawcode"
+  if [[ -n "${SHELL:-}" && "$SHELL" == *zsh* ]]; then
+    echo "  • Or run: source ~/.zshrc   then run: clawcode"
+  else
+    echo "  • Or run: source ~/.bashrc  then run: clawcode"
+  fi
 }
 
 main "$@"

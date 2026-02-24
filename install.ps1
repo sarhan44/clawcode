@@ -74,19 +74,38 @@ try {
     Pop-Location
   }
 
-  $cliSrc = Join-Path $repoDir "dist" "cli.js"
-  if (-not (Test-Path $cliSrc)) {
-    Throw-InstallError "dist\cli.js not found after build."
+  Write-Host "Installing globally into $InstallDir (no sudo)..."
+  New-Item -ItemType Directory -Path $BinDir -Force | Out-Null
+  Set-Content -Path (Join-Path $InstallDir "package.json") -Value '{"name":"clawcode-install","private":true}' -Encoding UTF8
+
+  Push-Location $repoDir
+  try {
+    $packfile = (& npm pack 2>$null) | Select-Object -Last 1
+    $packfile = $packfile?.Trim()
+    if (-not $packfile -or -not (Test-Path (Join-Path $repoDir $packfile))) {
+      Throw-InstallError "npm pack failed."
+    }
+    Push-Location $InstallDir
+    try {
+      & npm install --no-audit --no-fund (Join-Path $repoDir $packfile)
+      if ($LASTEXITCODE -ne 0) { Throw-InstallError "npm install failed." }
+    } finally {
+      Pop-Location
+    }
+    Remove-Item -Path (Join-Path $repoDir $packfile) -Force -ErrorAction SilentlyContinue
+  } finally {
+    Pop-Location
   }
 
-  New-Item -ItemType Directory -Path $BinDir -Force | Out-Null
-  $cliDest = Join-Path $BinDir "clawcode.js"
-  Copy-Item -Path $cliSrc -Destination $cliDest -Force
+  $cliScript = Join-Path $InstallDir "node_modules" "clawcode" "dist" "cli.js"
+  if (-not (Test-Path $cliScript)) {
+    Throw-InstallError "Installed package missing dist\cli.js."
+  }
 
   $clawcodeCmd = Join-Path $BinDir "clawcode.cmd"
   @"
 @echo off
-node "%USERPROFILE%\.clawcode\bin\clawcode.js" %*
+node "%USERPROFILE%\.clawcode\node_modules\clawcode\dist\cli.js" %*
 "@ | Set-Content -Path $clawcodeCmd -Encoding ASCII
 
   $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
@@ -98,7 +117,9 @@ node "%USERPROFILE%\.clawcode\bin\clawcode.js" %*
 
   Write-Host ""
   Write-Host "ClawCode installed successfully."
-  Write-Host "Restart terminal and run: clawcode"
+  Write-Host "Restart your terminal to use 'clawcode' from any folder. Starting ClawCode now..."
+  Write-Host ""
+  & $clawcodeCmd
 } finally {
   if (Test-Path $tempRoot) {
     Remove-Item -Path $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
